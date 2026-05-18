@@ -1,0 +1,17 @@
+{
+  "short_name": "EdiblackTasks",
+  "name": "Ediblack Tasks Control",
+  "icons": [
+    {
+      "src": "https://us.123rf.com/450xm/faysalsidique/faysalsidique1706/faysalsidique170600201/79109170-human-skulls-with-red-headphones-icons-for-design-template.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#7e57c2",
+  "theme_color": "#7e57c2",
+  "display": "standalone",
+  "orientation": "portrait"
+}
