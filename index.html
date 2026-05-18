@@ -89,19 +89,19 @@
         th, td { border-bottom: 1px solid #eee; padding: 12px 6px; text-align: left; }
         th { background-color: #f8f9fa; color: #555; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
         
-        td.prior-cell, th.prior-header { width: 50px; text-align: center; padding: 12px 2px; }
-        td.comp-cell, th.comp-header { width: 60px; text-align: center; padding: 12px 2px; }
+        td.prior-cell, th.prior-header { width: 55px; text-align: center; padding: 12px 2px; font-size: 15px; }
+        td.comp-cell, th.comp-header { width: 65px; text-align: center; padding: 12px 2px; }
         
         td.task-cell {
             cursor: pointer;
             transition: background-color 0.2s;
             font-size: 16px;
             padding-left: 10px;
-            color: #555;
+            color: #333;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            width: auto;
+            max-width: 150px; /* Evita que empuje el resto de las columnas */
         }
         
         td.task-cell:active { background-color: #f0f0f0; }
@@ -156,7 +156,6 @@
         
         .modal-title { font-size: 19px; font-weight: bold; margin-bottom: 20px; color: var(--primary); text-align: center; }
         
-        /* Caja de texto multilinea con ajuste automático al borde y scroll vertical si es necesario */
         .modal textarea {
             width: 100%;
             height: 120px;
@@ -168,9 +167,9 @@
             box-sizing: border-box;
             background: #fff;
             font-family: inherit;
-            resize: none; /* Desactiva el redimensionamiento manual molesto en móviles */
+            resize: none;
             word-wrap: break-word;
-            white-space: pre-wrap; /* Mantiene los saltos de línea visualmente */
+            white-space: pre-wrap;
         }
         
         .modal select {
@@ -288,9 +287,9 @@
             const mes = String(ahora.getMonth() + 1).padStart(2, '0');
             const anio = ahora.getFullYear();
             const horas = String(ahora.getHours()).padStart(2, '0');
-            const minutes = String(ahora.getMinutes()).padStart(2, '0');
+            const minutos = String(ahora.getMinutes()).padStart(2, '0');
             const segundos = String(ahora.getSeconds()).padStart(2, '0');
-            document.getElementById('current-datetime').innerText = `${nombreDia}, ${dia}/${mes}/${anio} ${horas}:${minutes}:${segundos}`;
+            document.getElementById('current-datetime').innerText = `${nombreDia}, ${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
         }
         setInterval(actualizarReloj, 1000);
         actualizarReloj();
@@ -302,26 +301,27 @@
                 const tarea = fila.getAttribute('data-task-full') || '';
                 const prioridad = fila.getAttribute('data-task-prior') || 'Media';
                 const completado = fila.querySelector('.comp-select').value;
-                if (tarea || completado !== '10%') {
-                    datos.push({ tarea, prioridad, completado });
-                }
+                datos.push({ tarea, prioridad, completado });
             });
             localStorage.setItem('datosTareas', JSON.stringify(datos));
         }
 
         function cargarDatos() {
             const datosGuardados = localStorage.getItem('datosTareas');
+            const tbody = document.getElementById('cuerpo-tabla');
+            tbody.innerHTML = '';
+            
             if (datosGuardados) {
                 const datos = JSON.parse(datosGuardados);
-                const tbody = document.getElementById('cuerpo-tabla');
-                tbody.innerHTML = '';
-                datos.forEach(item => {
-                    crearFilaHTML(item.tarea, item.prioridad, item.completado);
-                });
+                if (datos.length > 0) {
+                    datos.forEach((item, index) => {
+                        crearFilaHTML(item.tarea, item.prioridad, item.completado, index);
+                    });
+                    return;
+                }
             }
-            if (document.querySelectorAll('.fila-tarea').length === 0) {
-                agregarFila();
-            }
+            // Si está vacío, genera una fila inicial por defecto
+            agregarFila();
         }
 
         function actualizarColorCelda(selectElement) {
@@ -331,7 +331,7 @@
         }
 
         function truncateText(text, length) {
-            // Reemplaza saltos de línea por espacios sólo para la previsualización en la tabla
+            if (!text) return 'Nueva Tarea';
             let cleanText = text.replace(/\n/g, " ");
             if (cleanText.length > length) {
                 return cleanText.substring(0, length) + '...';
@@ -350,7 +350,6 @@
             
             document.getElementById('taskModal').style.display = 'flex';
             
-            // Autoenfocar el área de texto al abrir
             setTimeout(() => {
                 document.getElementById('modalTaskText').focus();
             }, 150);
@@ -370,5 +369,77 @@
             const taskCell = row.querySelector('.task-cell');
             const priorCell = row.querySelector('.prior-cell');
             
-            taskCell.innerText = fullTask ? truncateText(fullTask, 25) : 'Nueva Tarea';
-            taskCell.style.color
+            taskCell.innerText = truncateText(fullTask, 22);
+            taskCell.style.color = fullTask ? '#333' : '#999';
+            priorCell.innerText = prior;
+            
+            row.setAttribute('data-task-full', fullTask);
+            row.setAttribute('data-task-prior', prior);
+            
+            guardarDatos();
+            closeModal();
+        }
+
+        function crearFilaHTML(task = '', prior = 'Media', comp = '10%', index = null) {
+            const tbody = document.getElementById('cuerpo-tabla');
+            const fila = document.createElement('tr');
+            fila.className = "fila-tarea";
+            
+            // Usar un ID único y limpio basado en tiempo e índice para evitar conflictos de lectura
+            const idx = index !== null ? index : document.querySelectorAll('.fila-tarea').length;
+            const rowId = 'task_row_' + Date.now() + '_' + idx;
+            fila.id = rowId;
+            
+            fila.setAttribute('data-task-full', task);
+            fila.setAttribute('data-task-prior', prior);
+
+            let opcionesComp = '';
+            for (let i = 10; i <= 100; i += 10) {
+                const pct = `${i}%`;
+                opcionesComp += `<option value="${pct}" ${comp === pct ? 'selected' : ''}>${pct}</option>`;
+            }
+
+            fila.innerHTML = `
+                <td style="text-align: center;"><button class="btn-action btn-add-row" onclick="agregarFila()">+</button></td>
+                <td class="task-cell" onclick="openModal('${rowId}')">${truncateText(task, 22)}</td>
+                <td class="prior-cell">${prior}</td>
+                <td class="comp-cell" style="transition: background-color 0.3s ease;"><select class="comp-select" onchange="actualizarColorCelda(this); guardarDatos()">${opcionesComp}</select></td>
+                <td style="text-align: center;"><button class="btn-action btn-del-row" onclick="eliminarFila(this)">-</button></td>
+            `;
+            
+            tbody.appendChild(fila);
+            
+            if (!task) { fila.querySelector('.task-cell').style.color = '#999'; }
+            
+            const selectElement = fila.querySelector('.comp-select');
+            actualizarColorCelda(selectElement);
+
+            return fila;
+        }
+
+        function agregarFila() {
+            crearFilaHTML();
+            guardarDatos();
+        }
+
+        function eliminarFila(boton) {
+            const fila = boton.closest('tr');
+            fila.remove();
+            guardarDatos();
+            if (document.querySelectorAll('.fila-tarea').length === 0) {
+                agregarFila();
+            }
+        }
+
+        function borrarTodo() {
+            if(confirm("¿Deseas limpiar toda la lista de tareas?")) {
+                localStorage.removeItem('datosTareas');
+                document.getElementById('cuerpo-tabla').innerHTML = '';
+                agregarFila();
+            }
+        }
+
+        window.onload = cargarDatos;
+    </script>
+</body>
+</html>
