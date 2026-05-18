@@ -1,127 +1,245 @@
-import tkinter as tk
-from tkinter import ttk
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Control System</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#7e57c2">
+    <meta name="mobile-web-app-capable" content="yes">
 
-class AplicacionTareas:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Control de Tareas")
-        self.root.geometry("550x500")
-        self.root.configure(bg="#f4f6f9")
-
-        self.filas = [] # Lista para rastrear los widgets de cada tarea
-
-        # Mapa de colores para el porcentaje completado (del 10% al 100%)
-        # Va progresando desde tonos amarillos hasta un verde suave óptimo para lectura
-        self.colores_progreso = {
-            "10%": "#fffde7",  # Amarillo muy claro
-            "20%": "#fff9c4",  # Amarillo pastel claro
-            "30%": "#fff59d",  # Amarillo pastel
-            "40%": "#fff176",  # Amarillo brillante
-            "50%": "#ffee58",  # Amarillo sólido
-            "60%": "#d4e157",  # Verde lima claro
-            "70%": "#c6ff00",  # Lima brillante
-            "80%": "#a5d6a7",  # Verde claro pastel
-            "90%": "#81c784",  # Verde medio
-            "100%": "#a8e6cf"  # Verde menta / Completado exitoso
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0;
+            padding: 20px;
+            background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1000'); 
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
         }
 
-        # --- ENCABEZADO ---
-        self.lbl_nombre = tk.Label(root, text="TASKS", font=("Arial", 14, "bold"), bg="#f4f6f9", fg="#333333")
-        self.lbl_nombre.grid(row=0, column=0, padx=15, pady=15, sticky="w")
+        .datetime-container {
+            background: rgba(126, 87, 194, 0.9);
+            color: white;
+            text-align: center;
+            padding: 5px;
+            border-radius: 8px 8px 0 0;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
 
-        # --- BOTONES DE CONTROL ---
-        self.btn_nuevo = tk.Button(root, text="+ Nuevo", command=self.agregar_fila, relief="flat", fg="#1a73e8", font=("Arial", 10, "bold"), bg="#f4f6f9", activebackground="#e8f0fe")
-        self.btn_nuevo.grid(row=1, column=0, padx=15, pady=(0, 10), sticky="w")
+        .header, .controls {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 
-        self.btn_borrar = tk.Button(root, text="Borrar todo", command=self.borrar_todo, relief="flat", fg="#d93025", font=("Arial", 10, "bold"), bg="#f4f6f9", activebackground="#fce8e6")
-        self.btn_borrar.grid(row=1, column=2, padx=15, pady=(0, 10), sticky="e")
-
-        # --- TABLA (ENCABEZADOS) ---
-        headers = ["Task", "Prior", "Completed"]
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-radius: 0 0 8px 8px; 
+            margin-top: 0;
+        }
         
-        # Frame contenedor para asegurar la perfecta alineación de los encabezados fijos
-        self.header_frame = tk.Frame(root, bg="#f4f6f9")
-        self.header_frame.grid(row=2, column=0, columnspan=3, padx=15, sticky="ew")
+        .header h1 { font-size: 20px; margin: 0; color: #333; letter-spacing: 1px; }
         
-        # Espacio invisible para alinear correctamente con el botón "+" de las filas dinámicas
-        lbl_spacer = tk.Label(self.header_frame, text="", width=3, bg="#f4f6f9")
-        lbl_spacer.grid(row=0, column=0)
+        .controls { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-radius: 8px;
+        }
 
-        for i, header in enumerate(headers):
-            lbl = tk.Label(self.header_frame, text=header, borderwidth=1, relief="solid", font=("Arial", 10, "bold"), width=16, bg="#ffffff", fg="#000000")
-            lbl.grid(row=0, column=i+1, sticky="nsew")
+        .btn-link { background: none; border: none; color: #7e57c2; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-red { color: #d32f2f; }
 
-        # Contenedor para las filas dinámicas
-        self.container = tk.Frame(root, bg="#f4f6f9")
-        self.container.grid(row=3, column=0, columnspan=3, padx=15, pady=5, sticky="nw")
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 10px 5px; text-align: left; }
+        th { background-color: #f8f9fa; color: #555; font-size: 12px; text-align: center; }
+
+        input, select { width: 95%; border: none; outline: none; font-size: 16px; background: transparent; padding: 5px; }
         
-        # Opciones numéricas para el ComboBox de porcentaje
-        self.opciones_porcentaje = [f"{i}%" for i in range(10, 110, 10)]
+        select {
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none; /* Eliminar flecha por defecto para mejor control visual */
+            text-align: center;
+        }
 
-        # Configurar el motor de temas para permitir cambiar el fondo de los Combobox integrados
-        self.style = ttk.Style()
-        self.style.theme_use('clam')
-
-        # Agregar la primera fila por defecto
-        self.agregar_fila()
-
-    def agregar_fila(self):
-        row_idx = len(self.filas)
+        .btn-action { 
+            width: 30px; 
+            height: 30px; 
+            border-radius: 50%; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-add-row { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+        .btn-del-row { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
         
-        # Botón "+" a la izquierda de la fila dinámica
-        btn_add = tk.Button(self.container, text="+", command=self.agregar_fila, width=2, relief="groove", bd=1)
-        btn_add.grid(row=row_idx, column=0, padx=(0, 5), pady=2)
+        input:focus { background-color: #fff9c4; border-radius: 4px; } 
+    </style>
+</head>
+<body>
 
-        # Entrada para la Tarea (Task)
-        ent_task = tk.Entry(self.container, width=19, highlightthickness=1, highlightbackground="#cccccc")
-        ent_task.grid(row=row_idx, column=1, pady=2)
+    <div class="datetime-container" id="current-datetime">
+        --/--/---- --:--:--
+    </div>
 
-        # Entrada para la Prioridad (Prior)
-        ent_prior = tk.Entry(self.container, width=19, highlightthickness=1, highlightbackground="#cccccc")
-        ent_prior.grid(row=row_idx, column=2, pady=2)
+    <div class="header">
+        <h1>TASKS</h1>
+    </div>
 
-        # Dropdown para el porcentaje (Completed)
-        cmb_comp = ttk.Combobox(self.container, values=self.opciones_porcentaje, width=16, state="readonly")
-        cmb_comp.grid(row=row_idx, column=3, pady=2, padx=(1, 0))
-        
-        # Valor por defecto inicializado en 10%
-        cmb_comp.set("10%")
-        
-        # Asignar color correspondiente a su ID único de widget
-        self.cambiar_color_porcentaje(cmb_comp)
+    <div class="controls">
+        <button class="btn-link" onclick="agregarFila()">+ Nueva Tarea</button>
+        <button class="btn-link btn-red" onclick="borrarTodo()">Borrar todo</button>
+    </div>
 
-        # Enlazar la selección del dropdown para que cambie de color en tiempo real
-        cmb_comp.bind("<<ComboboxSelected>>", lambda event, c=cmb_comp: self.cambiar_color_porcentaje(c))
+    <table id="tabla-tareas">
+        <thead>
+            <tr>
+                <th style="width: 35px;">+</th>
+                <th>Task</th>
+                <th style="width: 100px;">Prior</th>
+                <th style="width: 110px;">Completed</th>
+                <th style="width: 35px;">-</th>
+            </tr>
+        </thead>
+        <tbody id="cuerpo-tabla"></tbody>
+    </table>
 
-        self.filas.append({
-            "btn": btn_add,
-            "task": ent_task,
-            "prior": ent_prior,
-            "comp": cmb_comp
-        })
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
 
-    def cambiar_color_porcentaje(self, combo):
-        seleccion = combo.get()
-        color = self.colores_progreso.get(seleccion, "#ffffff")
-        
-        # Generar un sub-estilo dinámico único para este Combobox específico usando su ID de memoria interna (winfo_id)
-        # Esto evita que cambiar el color de una celda altere o pinte las demás celdas de la tabla.
-        style_name = f"Color.{combo.winfo_id()}.TCombobox"
-        self.style.configure(style_name, fieldbackground=color, background=color)
-        combo.config(style=style_name)
+        // Mapa dinámico de colores de fondo según el progreso seleccionado
+        const coloresProgreso = {
+            "10%": "#fffde7",  "20%": "#fff9c4",  "30%": "#fff59d", 
+            "40%": "#fff176",  "50%": "#ffee58",  "60%": "#d4e157", 
+            "70%": "#c6ff00",  "80%": "#a5d6a7",  "90%": "#81c784", 
+            "100%": "#a8e6cf"
+        };
 
-    def borrar_todo(self):
-        # Limpieza y destrucción de todos los objetos en pantalla
-        for fila in self.filas:
-            fila["btn"].destroy()
-            fila["task"].destroy()
-            fila["prior"].destroy()
-            fila["comp"].destroy()
-        
-        self.filas = []
-        self.agregar_fila() # Reestablecer fila limpia de inicio
+        function actualizarReloj() {
+            const ahora = new Date();
+            const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            const nombreDia = diasSemana[ahora.getDay()];
+            const dia = String(ahora.getDate()).padStart(2, '0');
+            const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+            const anio = ahora.getFullYear();
+            const horas = String(ahora.getHours()).padStart(2, '0');
+            const minutos = String(ahora.getMinutes()).padStart(2, '0');
+            const segundos = String(ahora.getSeconds()).padStart(2, '0');
+            document.getElementById('current-datetime').innerText = `${nombreDia}, ${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
+        }
+        setInterval(actualizarReloj, 1000);
+        actualizarReloj();
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = AplicacionTareasMarcela(root)
-    root.mainloop()
+        function guardarDatos() {
+            const filas = document.querySelectorAll('.fila-tarea');
+            const datos = [];
+            filas.forEach(fila => {
+                const tarea = fila.querySelector('.task').value;
+                const prioridad = fila.querySelector('.prior').value;
+                const completado = fila.querySelector('.comp').value;
+                if (tarea || prioridad) {
+                    datos.push({ tarea, prioridad, completado });
+                }
+            });
+            localStorage.setItem('datosTareas', JSON.stringify(datos));
+        }
+
+        function cargarDatos() {
+            const datosGuardados = localStorage.getItem('datosTareas');
+            if (datosGuardados) {
+                const datos = JSON.parse(datosGuardados);
+                const tbody = document.getElementById('cuerpo-tabla');
+                tbody.innerHTML = '';
+                datos.forEach(item => {
+                    crearFilaHTML(item.tarea, item.prioridad, item.completado);
+                });
+            }
+            if (document.querySelectorAll('.fila-tarea').length === 0) {
+                agregarFila();
+            }
+        }
+
+        function actualizarColorCelda(selectElement) {
+            const porcentaje = selectElement.value;
+            const color = coloresProgreso[porcentaje] || "#ffffff";
+            selectElement.parentElement.style.backgroundColor = color;
+        }
+
+        function crearFilaHTML(task = '', prior = '', comp = '10%') {
+            const tbody = document.getElementById('cuerpo-tabla');
+            const fila = document.createElement('tr');
+            fila.className = "fila-tarea";
+            
+            // Generar las opciones del 10% al 100% dinámicamente
+            let opcionesSelect = '';
+            for (let i = 10; i <= 100; i += 10) {
+                const pct = `${i}%`;
+                opcionesSelect += `<option value="${pct}" ${comp === pct ? 'selected' : ''}>${pct}</option>`;
+            }
+
+            fila.innerHTML = `
+                <td style="text-align: center;"><button class="btn-action btn-add-row" onclick="agregarFila()">+</button></td>
+                <td><input type="text" class="task" value="${task}" placeholder="Nueva tarea..." oninput="guardarDatos()"></td>
+                <td><input type="text" class="prior" value="${prior}" placeholder="Alta, Media..." oninput="guardarDatos()" onkeydown="verificarEnter(event)"></td>
+                <td style="transition: background-color 0.3s ease;"><select class="comp" onchange="actualizarColorCelda(this); guardarDatos()">${opcionesSelect}</select></td>
+                <td style="text-align: center;"><button class="btn-action btn-del-row" onclick="eliminarFila(this)">-</button></td>
+            `;
+            
+            tbody.appendChild(fila);
+            
+            // Inicializar el color de la celda según el porcentaje cargado
+            const selectElement = fila.querySelector('.comp');
+            actualizarColorCelda(selectElement);
+
+            return fila;
+        }
+
+        function agregarFila() {
+            const fila = crearFilaHTML();
+            fila.querySelector('.task').focus();
+            guardarDatos();
+        }
+
+        function eliminarFila(boton) {
+            const fila = boton.closest('tr');
+            fila.remove();
+            guardarDatos();
+            if (document.querySelectorAll('.fila-tarea').length === 0) {
+                agregarFila();
+            }
+        }
+
+        function verificarEnter(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                agregarFila();
+            }
+        }
+
+        function borrarTodo() {
+            if(confirm("¿Deseas limpiar toda la lista de tareas?")) {
+                localStorage.removeItem('datosTareas');
+                document.getElementById('cuerpo-tabla').innerHTML = '';
+                agregarFila();
+            }
+        }
+
+        window.onload = cargarDatos;
+    </script>
+</body>
+</html>
