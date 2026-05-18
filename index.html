@@ -2,79 +2,117 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Control System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ediblack Tasks Control</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#7e57c2">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <style>
+        :root {
+            --primary: #7e57c2;
+            --background: #f4f6f9;
+            --text: #333;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
         body { 
-            font-family: Arial, sans-serif; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0;
-            padding: 20px;
-            background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1000'); 
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            background: radial-gradient(circle, rgba(126,87,194,1) 0%, rgba(26,115,232,1) 100%);
             background-size: cover;
             background-attachment: fixed;
-            background-position: center;
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Estilos móviles para instalación como App */
+        @media all and (display-mode: standalone) {
+            body { padding-top: 0; }
         }
 
         .datetime-container {
             background: rgba(126, 87, 194, 0.9);
             color: white;
             text-align: center;
-            padding: 5px;
-            border-radius: 8px 8px 0 0;
-            font-size: 14px;
+            padding: 8px;
+            font-size: 15px;
             font-weight: bold;
             letter-spacing: 1px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+        }
+
+        .main-container {
+            padding: 0 15px;
         }
 
         .header, .controls {
             background: rgba(255, 255, 255, 0.9);
             padding: 15px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            border-radius: 8px;
         }
 
         .header { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            border-radius: 0 0 8px 8px; 
-            margin-top: 0;
         }
         
-        .header h1 { font-size: 20px; margin: 0; color: #333; letter-spacing: 1px; }
+        .header h1 { font-size: 22px; margin: 0; color: #333; letter-spacing: 1px; }
         
         .controls { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            border-radius: 8px;
         }
 
-        .btn-link { background: none; border: none; color: #7e57c2; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-link { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 17px; font-weight: bold; padding: 10px; }
         .btn-red { color: #d32f2f; }
 
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        th, td { border: 1px solid #ddd; padding: 10px 5px; text-align: left; }
-        th { background-color: #f8f9fa; color: #555; font-size: 12px; text-align: center; }
-
-        input, select { width: 95%; border: none; outline: none; font-size: 16px; background: transparent; padding: 5px; }
-        
-        select {
-            cursor: pointer;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            text-align: center;
+        table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0; 
+            background: white; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 6px 10px rgba(0,0,0,0.15); 
+            margin-bottom: env(safe-area-inset-bottom);
         }
-
+        
+        th, td { border-bottom: 1px solid #eee; padding: 12px 6px; text-align: left; }
+        th { background-color: #f8f9fa; color: #555; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Ajuste Horizontal Wrapped para Prior y Completed */
+        td.prior-cell, th.prior-header { width: 50px; text-align: center; padding: 12px 2px; }
+        td.comp-cell, th.comp-header { width: 60px; text-align: center; padding: 12px 2px; }
+        
+        /* Task Cell: Expansión Horizontal Máxima */
+        td.task-cell {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 16px;
+            padding-left: 10px;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: auto; /* Permite expansión */
+        }
+        
+        td.task-cell:active { background-color: #f0f0f0; }
+        
+        /* Botones de acción (+/-) con padding táctil */
         .btn-action { 
-            width: 30px; 
-            height: 30px; 
+            width: 36px; 
+            height: 36px; 
             border-radius: 50%; 
             border: 1px solid #ccc; 
             font-weight: bold; 
@@ -82,11 +120,89 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 18px;
+            padding: 0;
+            margin: auto;
         }
         .btn-add-row { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
         .btn-del-row { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
         
-        input:focus { background-color: #fff9c4; border-radius: 4px; } 
+        /* Estilos del Cuadro Flotante (Modal Editor) */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 85%;
+            max-width: 400px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: relative;
+            animation: modalSlide 0.3s ease-out;
+        }
+
+        @keyframes modalSlide {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-title { font-size: 19px; font-weight: bold; margin-bottom: 20px; color: var(--primary); text-align: center; }
+        
+        .modal input[type="text"], .modal select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        
+        .btn-modal {
+            padding: 12px 25px;
+            border-radius: 25px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: opacity 0.2s;
+            min-width: 110px;
+        }
+        
+        .btn-modal:active { opacity: 0.8; }
+        
+        .btn-save { background-color: #2e7d32; color: white; }
+        .btn-cancel { background-color: #d32f2f; color: white; }
+
+        /* Estilo para los selects dentro de la tabla */
+        select.comp-select {
+            width: 95%;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            cursor: pointer;
+            padding: 2px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -95,47 +211,66 @@
         --/--/---- --:--:--
     </div>
 
-    <div class="header">
-        <h1>TASKS</h1>
+    <div class="main-container">
+        <div class="header">
+            <h1>TASKS</h1>
+        </div>
+
+        <div class="controls">
+            <button class="btn-link" onclick="agregarFila()">+ Nueva Tarea</button>
+            <button class="btn-link btn-red" onclick="borrarTodo()">Borrar todo</button>
+        </div>
+
+        <table id="tabla-tareas">
+            <thead>
+                <tr>
+                    <th style="width: 35px;">+</th>
+                    <th>Task</th>
+                    <th class="prior-header">Prior</th>
+                    <th class="comp-header">Completed</th>
+                    <th style="width: 35px;">-</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-tabla"></tbody>
+        </table>
     </div>
 
-    <div class="controls">
-        <button class="btn-link" onclick="agregarFila()">+ Nueva Tarea</button>
-        <button class="btn-link btn-red" onclick="borrarTodo()">Borrar todo</button>
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Editar Tarea</div>
+            <input type="text" id="modalTaskText" placeholder="Descripción de la tarea...">
+            
+            <select id="modalTaskPrior">
+                <option value="Alta">Alta</option>
+                <option value="Media">Media</option>
+                <option value="Baja">Baja</option>
+            </select>
+            
+            <div class="modal-buttons">
+                <button class="btn-modal btn-cancel" onclick="closeModal()">CANCEL</button>
+                <button class="btn-modal btn-save" onclick="saveModal()">SAVE</button>
+            </div>
+        </div>
     </div>
-
-    <table id="tabla-tareas">
-        <thead>
-            <tr>
-                <th style="width: 35px;">+</th>
-                <th>Task</th>
-                <th style="width: 120px;">Prior</th>
-                <th style="width: 110px;">Completed</th>
-                <th style="width: 35px;">-</th>
-            </tr>
-        </thead>
-        <tbody id="cuerpo-tabla"></tbody>
-    </table>
 
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
 
-        // Colores para la columna Completed
+        // Colores para Completed
         const coloresProgreso = {
-            "10%": "#fffde7",  "20%": "#fff9c4",  "30%": "#fff59d", 
-            "40%": "#fff176",  "50%": "#ffee58",  "60%": "#d4e157", 
-            "70%": "#c6ff00",  "80%": "#a5d6a7",  "90%": "#81c784", 
+            "10%": "#fffde7", "20%": "#fff9c4", "30%": "#fff59d", 
+            "40%": "#fff176", "50%": "#ffee58", "60%": "#d4e157", 
+            "70%": "#c6ff00", "80%": "#a5d6a7", "90%": "#81c784", 
             "100%": "#a8e6cf"
         };
 
-        // Opciones fijas para la columna Prior
-        const opcionesPrioridad = ["Alta", "Media", "Baja"];
+        let currentEditingRowId = null;
 
         function actualizarReloj() {
             const ahora = new Date();
-            const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
             const nombreDia = diasSemana[ahora.getDay()];
             const dia = String(ahora.getDate()).padStart(2, '0');
             const mes = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -152,10 +287,10 @@
             const filas = document.querySelectorAll('.fila-tarea');
             const datos = [];
             filas.forEach(fila => {
-                const tarea = fila.querySelector('.task').value;
-                const prioridad = fila.querySelector('.prior').value;
-                const completado = fila.querySelector('.comp').value;
-                if (tarea || prioridad) {
+                const tarea = fila.getAttribute('data-task-full') || '';
+                const prioridad = fila.getAttribute('data-task-prior') || 'Media';
+                const completado = fila.querySelector('.comp-select').value;
+                if (tarea || completado !== '10%') {
                     datos.push({ tarea, prioridad, completado });
                 }
             });
@@ -183,44 +318,93 @@
             selectElement.parentElement.style.backgroundColor = color;
         }
 
+        function truncateText(text, length) {
+            if (text.length > length) {
+                return text.substring(0, length) + '...';
+            }
+            return text;
+        }
+
+        // Lógica del Modal
+        function openModal(rowId) {
+            currentEditingRowId = rowId;
+            const row = document.getElementById(rowId);
+            const fullTask = row.getAttribute('data-task-full') || '';
+            const prior = row.getAttribute('data-task-prior') || 'Media';
+            
+            document.getElementById('modalTaskText').value = fullTask;
+            document.getElementById('modalTaskPrior').value = prior;
+            
+            document.getElementById('taskModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('taskModal').style.display = 'none';
+            currentEditingRowId = null;
+        }
+
+        function saveModal() {
+            if (!currentEditingRowId) return;
+            const fullTask = document.getElementById('modalTaskText').value;
+            const prior = document.getElementById('modalTaskPrior').value;
+            
+            const row = document.getElementById(currentEditingRowId);
+            const taskCell = row.querySelector('.task-cell');
+            const priorCell = row.querySelector('.prior-cell');
+            
+            // Actualizar la vista en la tabla
+            taskCell.innerText = fullTask ? truncateText(fullTask, 25) : 'Nueva Tarea';
+            taskCell.style.color = fullTask ? '#333' : '#999'; // Cambiar color si está vacía
+            priorCell.innerText = prior;
+            
+            // Actualizar los atributos de datos
+            row.setAttribute('data-task-full', fullTask);
+            row.setAttribute('data-task-prior', prior);
+            
+            guardarDatos();
+            closeModal();
+        }
+
         function crearFilaHTML(task = '', prior = 'Media', comp = '10%') {
             const tbody = document.getElementById('cuerpo-tabla');
             const fila = document.createElement('tr');
             fila.className = "fila-tarea";
+            const rowId = 'row_' + Date.now();
+            fila.id = rowId;
             
-            // Generar las opciones de Prioridad dinámicamente
-            let opcionesPrior = '';
-            opcionesPrioridad.forEach(p => {
-                opcionesPrior += `<option value="${p}" ${prior === p ? 'selected' : ''}>${p}</option>`;
-            });
+            // Almacenar datos completos como atributos de la fila
+            fila.setAttribute('data-task-full', task);
+            fila.setAttribute('data-task-prior', prior);
 
-            // Generar las opciones de Completado dinámicamente
-            let opcionesSelect = '';
+            // Generar opciones de Completado
+            let opcionesComp = '';
             for (let i = 10; i <= 100; i += 10) {
                 const pct = `${i}%`;
-                opcionesSelect += `<option value="${pct}" ${comp === pct ? 'selected' : ''}>${pct}</option>`;
+                opcionesComp += `<option value="${pct}" ${comp === pct ? 'selected' : ''}>${pct}</option>`;
             }
 
             fila.innerHTML = `
                 <td style="text-align: center;"><button class="btn-action btn-add-row" onclick="agregarFila()">+</button></td>
-                <td><input type="text" class="task" value="${task}" placeholder="Nueva tarea..." oninput="guardarDatos()"></td>
-                <td><select class="prior" onchange="guardarDatos()">${opcionesPrior}</select></td>
-                <td style="transition: background-color 0.3s ease;"><select class="comp" onchange="actualizarColorCelda(this); guardarDatos()">${opcionesSelect}</select></td>
+                <td class="task-cell" onclick="openModal('${rowId}')">${task ? truncateText(task, 25) : 'Nueva Tarea'}</td>
+                <td class="prior-cell">${prior}</td>
+                <td class="comp-cell" style="transition: background-color 0.3s ease;"><select class="comp-select" onchange="actualizarColorCelda(this); guardarDatos()">${opcionesComp}</select></td>
                 <td style="text-align: center;"><button class="btn-action btn-del-row" onclick="eliminarFila(this)">-</button></td>
             `;
             
             tbody.appendChild(fila);
             
-            // Inicializar el color de la celda de porcentaje
-            const selectElement = fila.querySelector('.comp');
+            // Estilizar celda vacía si es nueva
+            if (!task) { fila.querySelector('.task-cell').style.color = '#999'; }
+            
+            // Inicializar color de porcentaje
+            const selectElement = fila.querySelector('.comp-select');
             actualizarColorCelda(selectElement);
 
             return fila;
         }
 
         function agregarFila() {
-            const fila = crearFilaHTML();
-            fila.querySelector('.task').focus();
+            crearFilaHTML();
             guardarDatos();
         }
 
