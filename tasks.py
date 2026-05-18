@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 
-class AplicacionTareasMarcela:
+class AplicacionTareas:
     def __init__(self, root):
         self.root = root
-        self.root.title("Control de Tareas - Marcela")
+        self.root.title("Control de Tareas")
         self.root.geometry("550x500")
         self.root.configure(bg="#f4f6f9")
 
@@ -26,7 +26,7 @@ class AplicacionTareasMarcela:
         }
 
         # --- ENCABEZADO ---
-        self.lbl_nombre = tk.Label(root, text="TASKS / MARCELA", font=("Arial", 14, "bold"), bg="#f4f6f9", fg="#333333")
+        self.lbl_nombre = tk.Label(root, text="TASKS", font=("Arial", 14, "bold"), bg="#f4f6f9", fg="#333333")
         self.lbl_nombre.grid(row=0, column=0, padx=15, pady=15, sticky="w")
 
         # --- BOTONES DE CONTROL ---
