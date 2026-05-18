@@ -30,7 +30,6 @@
             overflow-x: hidden;
         }
 
-        /* Estilos móviles para instalación como App */
         @media all and (display-mode: standalone) {
             body { padding-top: 0; }
         }
@@ -90,11 +89,9 @@
         th, td { border-bottom: 1px solid #eee; padding: 12px 6px; text-align: left; }
         th { background-color: #f8f9fa; color: #555; font-size: 13px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Ajuste Horizontal Wrapped para Prior y Completed */
         td.prior-cell, th.prior-header { width: 50px; text-align: center; padding: 12px 2px; }
         td.comp-cell, th.comp-header { width: 60px; text-align: center; padding: 12px 2px; }
         
-        /* Task Cell: Expansión Horizontal Máxima */
         td.task-cell {
             cursor: pointer;
             transition: background-color 0.2s;
@@ -104,12 +101,11 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            width: auto; /* Permite expansión */
+            width: auto;
         }
         
         td.task-cell:active { background-color: #f0f0f0; }
         
-        /* Botones de acción (+/-) con padding táctil */
         .btn-action { 
             width: 36px; 
             height: 36px; 
@@ -160,7 +156,24 @@
         
         .modal-title { font-size: 19px; font-weight: bold; margin-bottom: 20px; color: var(--primary); text-align: center; }
         
-        .modal input[type="text"], .modal select {
+        /* Caja de texto multilinea con ajuste automático al borde y scroll vertical si es necesario */
+        .modal textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background: #fff;
+            font-family: inherit;
+            resize: none; /* Desactiva el redimensionamiento manual molesto en móviles */
+            word-wrap: break-word;
+            white-space: pre-wrap; /* Mantiene los saltos de línea visualmente */
+        }
+        
+        .modal select {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
@@ -193,7 +206,6 @@
         .btn-save { background-color: #2e7d32; color: white; }
         .btn-cancel { background-color: #d32f2f; color: white; }
 
-        /* Estilo para los selects dentro de la tabla */
         select.comp-select {
             width: 95%;
             border: none;
@@ -238,7 +250,8 @@
     <div id="taskModal" class="modal">
         <div class="modal-content">
             <div class="modal-title">Editar Tarea</div>
-            <input type="text" id="modalTaskText" placeholder="Descripción de la tarea...">
+            
+            <textarea id="modalTaskText" placeholder="Descripción de la tarea..."></textarea>
             
             <select id="modalTaskPrior">
                 <option value="Alta">Alta</option>
@@ -258,7 +271,6 @@
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
 
-        // Colores para Completed
         const coloresProgreso = {
             "10%": "#fffde7", "20%": "#fff9c4", "30%": "#fff59d", 
             "40%": "#fff176", "50%": "#ffee58", "60%": "#d4e157", 
@@ -276,9 +288,9 @@
             const mes = String(ahora.getMonth() + 1).padStart(2, '0');
             const anio = ahora.getFullYear();
             const horas = String(ahora.getHours()).padStart(2, '0');
-            const minutos = String(ahora.getMinutes()).padStart(2, '0');
+            const minutes = String(ahora.getMinutes()).padStart(2, '0');
             const segundos = String(ahora.getSeconds()).padStart(2, '0');
-            document.getElementById('current-datetime').innerText = `${nombreDia}, ${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
+            document.getElementById('current-datetime').innerText = `${nombreDia}, ${dia}/${mes}/${anio} ${horas}:${minutes}:${segundos}`;
         }
         setInterval(actualizarReloj, 1000);
         actualizarReloj();
@@ -319,13 +331,14 @@
         }
 
         function truncateText(text, length) {
-            if (text.length > length) {
-                return text.substring(0, length) + '...';
+            // Reemplaza saltos de línea por espacios sólo para la previsualización en la tabla
+            let cleanText = text.replace(/\n/g, " ");
+            if (cleanText.length > length) {
+                return cleanText.substring(0, length) + '...';
             }
-            return text;
+            return cleanText;
         }
 
-        // Lógica del Modal
         function openModal(rowId) {
             currentEditingRowId = rowId;
             const row = document.getElementById(rowId);
@@ -336,6 +349,11 @@
             document.getElementById('modalTaskPrior').value = prior;
             
             document.getElementById('taskModal').style.display = 'flex';
+            
+            // Autoenfocar el área de texto al abrir
+            setTimeout(() => {
+                document.getElementById('modalTaskText').focus();
+            }, 150);
         }
 
         function closeModal() {
@@ -352,80 +370,5 @@
             const taskCell = row.querySelector('.task-cell');
             const priorCell = row.querySelector('.prior-cell');
             
-            // Actualizar la vista en la tabla
             taskCell.innerText = fullTask ? truncateText(fullTask, 25) : 'Nueva Tarea';
-            taskCell.style.color = fullTask ? '#333' : '#999'; // Cambiar color si está vacía
-            priorCell.innerText = prior;
-            
-            // Actualizar los atributos de datos
-            row.setAttribute('data-task-full', fullTask);
-            row.setAttribute('data-task-prior', prior);
-            
-            guardarDatos();
-            closeModal();
-        }
-
-        function crearFilaHTML(task = '', prior = 'Media', comp = '10%') {
-            const tbody = document.getElementById('cuerpo-tabla');
-            const fila = document.createElement('tr');
-            fila.className = "fila-tarea";
-            const rowId = 'row_' + Date.now();
-            fila.id = rowId;
-            
-            // Almacenar datos completos como atributos de la fila
-            fila.setAttribute('data-task-full', task);
-            fila.setAttribute('data-task-prior', prior);
-
-            // Generar opciones de Completado
-            let opcionesComp = '';
-            for (let i = 10; i <= 100; i += 10) {
-                const pct = `${i}%`;
-                opcionesComp += `<option value="${pct}" ${comp === pct ? 'selected' : ''}>${pct}</option>`;
-            }
-
-            fila.innerHTML = `
-                <td style="text-align: center;"><button class="btn-action btn-add-row" onclick="agregarFila()">+</button></td>
-                <td class="task-cell" onclick="openModal('${rowId}')">${task ? truncateText(task, 25) : 'Nueva Tarea'}</td>
-                <td class="prior-cell">${prior}</td>
-                <td class="comp-cell" style="transition: background-color 0.3s ease;"><select class="comp-select" onchange="actualizarColorCelda(this); guardarDatos()">${opcionesComp}</select></td>
-                <td style="text-align: center;"><button class="btn-action btn-del-row" onclick="eliminarFila(this)">-</button></td>
-            `;
-            
-            tbody.appendChild(fila);
-            
-            // Estilizar celda vacía si es nueva
-            if (!task) { fila.querySelector('.task-cell').style.color = '#999'; }
-            
-            // Inicializar color de porcentaje
-            const selectElement = fila.querySelector('.comp-select');
-            actualizarColorCelda(selectElement);
-
-            return fila;
-        }
-
-        function agregarFila() {
-            crearFilaHTML();
-            guardarDatos();
-        }
-
-        function eliminarFila(boton) {
-            const fila = boton.closest('tr');
-            fila.remove();
-            guardarDatos();
-            if (document.querySelectorAll('.fila-tarea').length === 0) {
-                agregarFila();
-            }
-        }
-
-        function borrarTodo() {
-            if(confirm("¿Deseas limpiar toda la lista de tareas?")) {
-                localStorage.removeItem('datosTareas');
-                document.getElementById('cuerpo-tabla').innerHTML = '';
-                agregarFila();
-            }
-        }
-
-        window.onload = cargarDatos;
-    </script>
-</body>
-</html>
+            taskCell.style.color
