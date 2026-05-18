@@ -68,7 +68,7 @@
             cursor: pointer;
             -webkit-appearance: none;
             -moz-appearance: none;
-            appearance: none; /* Eliminar flecha por defecto para mejor control visual */
+            appearance: none;
             text-align: center;
         }
 
@@ -109,7 +109,7 @@
             <tr>
                 <th style="width: 35px;">+</th>
                 <th>Task</th>
-                <th style="width: 100px;">Prior</th>
+                <th style="width: 120px;">Prior</th>
                 <th style="width: 110px;">Completed</th>
                 <th style="width: 35px;">-</th>
             </tr>
@@ -122,13 +122,16 @@
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
 
-        // Mapa dinámico de colores de fondo según el progreso seleccionado
+        // Colores para la columna Completed
         const coloresProgreso = {
             "10%": "#fffde7",  "20%": "#fff9c4",  "30%": "#fff59d", 
             "40%": "#fff176",  "50%": "#ffee58",  "60%": "#d4e157", 
             "70%": "#c6ff00",  "80%": "#a5d6a7",  "90%": "#81c784", 
             "100%": "#a8e6cf"
         };
+
+        // Opciones fijas para la columna Prior
+        const opcionesPrioridad = ["Alta", "Media", "Baja"];
 
         function actualizarReloj() {
             const ahora = new Date();
@@ -180,12 +183,18 @@
             selectElement.parentElement.style.backgroundColor = color;
         }
 
-        function crearFilaHTML(task = '', prior = '', comp = '10%') {
+        function crearFilaHTML(task = '', prior = 'Media', comp = '10%') {
             const tbody = document.getElementById('cuerpo-tabla');
             const fila = document.createElement('tr');
             fila.className = "fila-tarea";
             
-            // Generar las opciones del 10% al 100% dinámicamente
+            // Generar las opciones de Prioridad dinámicamente
+            let opcionesPrior = '';
+            opcionesPrioridad.forEach(p => {
+                opcionesPrior += `<option value="${p}" ${prior === p ? 'selected' : ''}>${p}</option>`;
+            });
+
+            // Generar las opciones de Completado dinámicamente
             let opcionesSelect = '';
             for (let i = 10; i <= 100; i += 10) {
                 const pct = `${i}%`;
@@ -195,14 +204,14 @@
             fila.innerHTML = `
                 <td style="text-align: center;"><button class="btn-action btn-add-row" onclick="agregarFila()">+</button></td>
                 <td><input type="text" class="task" value="${task}" placeholder="Nueva tarea..." oninput="guardarDatos()"></td>
-                <td><input type="text" class="prior" value="${prior}" placeholder="Alta, Media..." oninput="guardarDatos()" onkeydown="verificarEnter(event)"></td>
+                <td><select class="prior" onchange="guardarDatos()">${opcionesPrior}</select></td>
                 <td style="transition: background-color 0.3s ease;"><select class="comp" onchange="actualizarColorCelda(this); guardarDatos()">${opcionesSelect}</select></td>
                 <td style="text-align: center;"><button class="btn-action btn-del-row" onclick="eliminarFila(this)">-</button></td>
             `;
             
             tbody.appendChild(fila);
             
-            // Inicializar el color de la celda según el porcentaje cargado
+            // Inicializar el color de la celda de porcentaje
             const selectElement = fila.querySelector('.comp');
             actualizarColorCelda(selectElement);
 
@@ -220,13 +229,6 @@
             fila.remove();
             guardarDatos();
             if (document.querySelectorAll('.fila-tarea').length === 0) {
-                agregarFila();
-            }
-        }
-
-        function verificarEnter(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
                 agregarFila();
             }
         }
