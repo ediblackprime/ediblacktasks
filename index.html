@@ -18,17 +18,17 @@
             --shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
+
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0;
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-            background: radial-gradient(circle, rgba(126,87,194,1) 0%, rgba(26,115,232,1) 100%);
-            background-size: cover;
-            background-attachment: fixed;
+            background-color: var(--background); /* Usa el negro grisáceo #1e1f22 */
             min-height: 100vh;
             color: var(--text);
             overflow-x: hidden;
         }
+
 
         @media all and (display-mode: standalone) {
             body { padding-top: 0; }
